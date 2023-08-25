@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Juego RPG</title>
+<style>
+  body {
+  background-color: #1f2c4d;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+
+.total-score {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  left: 30px;
+  background-color: #27ae60;
+  padding: 10px;
+  border-radius: 5px;
+  color: #ffffff;
+  font-weight: bold;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+
+#loginDiv, #signupDiv, #gameDiv {
+  background-color: #33475b;
+  padding: 20px;
+  border-radius: 10px;
+  margin: 20px auto;
+  width: 80%;
+  max-width: 400px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+input[type="text"], input[type="password"] {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: none;
+  border-radius: 5px;
+  background-color: #292929;
+  color: #FFF;
+}
+
+button {
+  display: inline-block;
+  padding: 10px 20px;
+  margin: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#collectButton, #buyMultiplier {
+  background-color: #3498db;
+  background-image: linear-gradient(to bottom, #3498db, #2980b9);
+  color: #ffffff;
+}
+
+@font-face {
+  font-family: '8bitOperatorPlus-Bold';
+  src: url('https://github.com/zios/unity-themes/raw/master/%40Themes/Fonts/8bit%20Operator/8bitOperatorPlus-Bold.ttf') format('truetype');
+  /* You can add more font formats (e.g., woff) for cross-browser compatibility */
+}
+
+#displayName {
+    background-color: #1a73e8; /* Blue background color */
+    color: Red; /* White text color */
+    font-family: '8bitOperatorPlus-Bold', monospace; /* Use VT323 font */
+    font-size: 18px; /* Increase font size */
+    padding: 5px 10px; /* Add some padding */
+    border-radius: 5px; /* Rounded corners */
+    display: inline-block; /* Make it inline */
+    margin-top: 30px; /* Reset margin */
+    margin-bottom: 10px; /* Create space below the username */
+  }
+
+#logoutButton, #deleteAccountButton {
+  display: none;
+  background-color: #e74c3c;
+  background-image: linear-gradient(to bottom, #e74c3c, #c0392b);
+  color: #ffffff;
+}
+
+#gameDiv {
+  position: relative;
+}
+
+#score {
+  color: #3498db;
+  font-size: 24px;
+}
+
+#scoreUpdate {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  color: #3498db;
+  animation: slide-up 1s ease-in-out;
+}
+
+@keyframes slide-up {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 30%);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+</style>
+</head>
+<body>
+  <h1>Juego RPG</h1>
+  <div id="loginDiv">
+    <h2>Iniciar sesión</h2>
+    <p>Usuario: <input type="text" id="loginUsername"></p>
+    <p>Contraseña: <input type="password" id="loginPassword"></p>
+    <button id="loginButton">Iniciar sesión</button>
+  </div>
+  <div id="signupDiv" style="display: none;">
+    <h2>Registrarse</h2>
+    <p>Usuario: <input type="text" id="signupUsername"></p>
+    <p>Contraseña: <input type="password" id="signupPassword"></p>
+    <button id="signupButton">Registrarse</button>
+  </div>
+  <div id="gameDiv" style="display: none;">
+    <div id="totalScoreDiv" class="total-score" style="display: none;">
+      puntuación total: <span id="totalScoreValue">0</span>
+    </div>
+  <p>Nombre: <span id="displayName"></span></p>
+  <p>Nivel: <span id="level">1</span></p>
+  <p>Puntuación: <span id="score">0</span></p>
+  <p>Misión: <span id="mission">Recolecta 5 puntos para subir de nivel</span></p>
+  <button id="collectButton" disabled>Recolectar Puntos</button>
+  <p>Diamantes: <span id="diamondCount">0</span></p>
+  <button id="buyMultiplier" disabled>Comprar x2 Multiplicador (10 Diamantes)</button>
+  <!-- Display the new buttons only when logged in -->
+  <button id="logoutButton">Cerrar sesión</button>
+  <button id="deleteAccountButton">Eliminar cuenta</button>
+</div>
+
+
+  <script>
+    let userData = JSON.parse(localStorage.getItem('userData')) || [];
+
+const scoreElement = document.getElementById('score');
+const levelElement = document.getElementById('level');
+const missionElement = document.getElementById('mission');
+const collectButton = document.getElementById('collectButton');
+const loginUsernameInput = document.getElementById('loginUsername');
+const loginPasswordInput = document.getElementById('loginPassword');
+const loginButton = document.getElementById('loginButton');
+const signupUsernameInput = document.getElementById('signupUsername');
+const signupPasswordInput = document.getElementById('signupPassword');
+const signupButton = document.getElementById('signupButton');
+const gameDiv = document.getElementById('gameDiv');
+const displayName = document.getElementById('displayName');
+const diamondCount = document.getElementById('diamondCount');
+const buyMultiplierButton = document.getElementById('buyMultiplier');
+const logoutButton = document.getElementById('logoutButton');
+const deleteAccountButton = document.getElementById('deleteAccountButton');
+
+loginButton.addEventListener('click', () => {
+  const enteredUsername = loginUsernameInput.value;
+  const enteredPassword = loginPasswordInput.value;
+
+  const user = userData.find(u => u.username === enteredUsername && u.password === enteredPassword);
+  if (user) {
+    username = enteredUsername;
+    loadGameData(user.gameData);
+    mostrarJuego();
+    logoutButton.style.display = 'block';
+    deleteAccountButton.style.display = 'block';
+  } else {
+    alert('Credenciales inválidas. Por favor, inténtalo nuevamente o regístrate.');
+  }
+  // Show the Total Score div after login
+  document.getElementById('totalScoreDiv').style.display = 'block';
+});
+
+signupButton.addEventListener('click', () => {
+  const enteredUsername = signupUsernameInput.value;
+  const enteredPassword = signupPasswordInput.value;
+
+  if (userData.some(u => u.username === enteredUsername)) {
+    alert('Nombre de usuario ya está en uso. Por favor, elige un nombre de usuario diferente.');
+  } else {
+    const newUser = {
+      username: enteredUsername,
+      password: enteredPassword,
+      gameData: {
+        level: 1,
+        score: 0,
+        targetScore: 5,
+        diamonds: 0,
+        multiplierActive: false,
+      },
+    };
+    userData.push(newUser);
+    localStorage.setItem('userData', JSON.stringify(userData));
+    alert('Registro exitoso. Por favor, inicia sesión.');
+  }
+});
+
+collectButton.addEventListener('click', () => {
+  let pointsToAdd = 1;
+  if (multiplierActive) {
+    pointsToAdd *= 2;
+  }
+  score += pointsToAdd;
+  scoreElement.textContent = score, document.getElementById("totalScoreValue").textContent;
+
+  if (score >= targetScore) {
+    level += 1;
+    levelElement.textContent = level;
+    score = 0;
+    scoreElement.textContent = score;
+    targetScore += 5;
+
+    if (level % 5 === 0) {
+      const diamondReward = Math.floor(level / 5);
+      diamonds += diamondReward;
+      diamondCount.textContent = diamonds;
+    }
+
+    missionElement.textContent = `Recolecta ${targetScore} puntos para subir de nivel`;
+
+    const currentUser = userData.find(u => u.username === username);
+    if (currentUser) {
+      currentUser.gameData = {
+        level,
+        score,
+        targetScore,
+        diamonds,
+        multiplierActive,
+      };
+      localStorage.setItem('userData', JSON.stringify(userData));
+    }
+  }
+});
+
+buyMultiplierButton.addEventListener('click', () => {
+  if (diamonds >= 10) {
+    diamonds -= 10;
+    diamondCount.textContent = diamonds;
+    multiplierActive = true;
+    buyMultiplierButton.disabled = true;
+
+    setTimeout(() => {
+      multiplierActive = false;
+      buyMultiplierButton.disabled = false;
+    }, 30000); 
+
+    const currentUser = userData.find(u => u.username === username);
+    if (currentUser) {
+      currentUser.gameData = {
+        level,
+        score,
+        targetScore,
+        diamonds,
+        multiplierActive,
+      };
+      localStorage.setItem('userData', JSON.stringify(userData));
+    }
+  }
+});
+
+function mostrarJuego() {
+  loginDiv.style.display = 'none';
+  signupDiv.style.display = 'none';
+  gameDiv.style.display = 'block';
+  displayName.textContent = username;
+  collectButton.disabled = false;
+  buyMultiplierButton.disabled = false;
+}
+
+function updateTotalScore() {
+  const scoreElement = document.getElementById('TotalScoreValue');
+  let totalScore = 0;
+  for (const user of userData) {
+    let userScore = user.gameData.score;
+    if (user.gameData.multiplierActive) {
+      userScore *= 2;
+    }
+    totalScore += userScore;
+  }
+  totalScoreValue.textContent = totalScore;
+}
+
+function loadGameData(gameData) {
+  level = gameData.level;
+  score = gameData.score;
+  targetScore = gameData.targetScore;
+  diamonds = gameData.diamonds;
+  multiplierActive = gameData.multiplierActive;
+
+  levelElement.textContent = level;
+  scoreElement.textContent = score;
+  diamondCount.textContent = diamonds;
+  if (multiplierActive) {
+    buyMultiplierButton.disabled = true;
+  }
+}
+
+if (localStorage.getItem('loggedInUser')) {
+  username = localStorage.getItem('loggedInUser');
+  mostrarJuego();
+  logoutButton.style.display = 'block';
+  deleteAccountButton.style.display = 'block';
+} else {
+  loginDiv.style.display = 'block';
+  signupDiv.style.display = 'block';
+  logoutButton.style.display = 'none';
+  deleteAccountButton.style.display = 'none';
+}
+
+logoutButton.addEventListener('click', () => {
+  localStorage.removeItem('loggedInUser');
+  location.reload();
+});
+
+deleteAccountButton.addEventListener('click', () => {
+  const confirmation = confirm("¿Estás seguro que deseas eliminar tu cuenta? Esta acción no se puede deshacer.");
+  if (confirmation) {
+    userData = userData.filter(u => u.username !== username);
+    localStorage.setItem('userData', JSON.stringify(userData));
+    localStorage.removeItem('loggedInUser');
+    location.reload();
+  }
+});
+  </script>
+</body>
+</html>
